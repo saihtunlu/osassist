@@ -1,0 +1,9 @@
+{
+  "data": {
+    "note": "test node",
+    "amount": "10000",
+    "label_name": "Test label",
+    "date": "2021/10/04",
+    "type": "Incomes"
+  }
+}
