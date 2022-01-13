@@ -16,5 +16,5 @@ class StoreSerializers(serializers.ModelSerializer):
     plan = PlanSerializers(many=False, read_only=True)
     class Meta:
         model = Store
-        fields = ['id', 'name',  'primary_color', 'currency','address'
+        fields = ['id', 'name',  'primary_color', 'currency','address','type'
                   ,'email', 'phone','balance', 'fbLink',  'logo',   'created_at', 'updated_at','plan']

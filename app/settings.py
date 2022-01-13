@@ -2,7 +2,6 @@ import os
 from pathlib import Path
 from corsheaders.defaults import default_headers
 from datetime import timedelta
-
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -26,6 +25,7 @@ INSTALLED_APPS = [
     # main base
     'membership_plan',
     'store',
+   
     # django apps
     'django.contrib.admin',
     'django.contrib.auth',
@@ -47,10 +47,9 @@ INSTALLED_APPS = [
     'order',
     'file',
     'billing',
-    'gdstorage',
     'finance'
-
 ]
+
 
 AUTH_USER_MODEL = 'account.User'
 DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
@@ -227,7 +226,3 @@ EMAIL_HOST_PASSWORD = 'qzrmjbqkltjmkegx'  # past the key or password app here
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 DEFAULT_FROM_EMAIL = 'saihtunlu14996@gmail.com'
-
-# Google Drive Storage Settings
-GOOGLE_DRIVE_STORAGE_JSON_KEY_FILE = os.path.join(BASE_DIR, 'ultimate-task-325407-226813c30090.json')
-GOOGLE_DRIVE_STORAGE_MEDIA_ROOT ='/media/' # OPTIONAL

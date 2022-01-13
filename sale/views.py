@@ -15,6 +15,7 @@ from django.db.models import Q
 from delivery.models import Delivery
 from rest_framework.permissions import IsAuthenticated
 from django.template.loader import render_to_string
+from datetime import date
 
 class Sales(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
@@ -43,13 +44,11 @@ class Sales(generics.ListAPIView):
                 Q(store=store,sale_no__icontains=query, status__icontains=status, date__icontains=date,  delivery_company__isnull=True) |
                 Q(store=store,customer__name__icontains=query, status__icontains=status, date__icontains=date,  delivery_company__name__icontains=delivery) |
                 Q(store=store,customer__name__icontains=query, status__icontains=status, date__icontains=date,  delivery_company__isnull=True) |
-
                 Q(store=store,sale_no__icontains=query, payment_status=status,  date__icontains=date, delivery_company__name__icontains=delivery) |
                 Q(store=store,sale_no__icontains=query, payment_status=status, date__icontains=date,  delivery_company__isnull=True) |
                 Q(store=store,customer__name__icontains=query, payment_status=status, date__icontains=date,  delivery_company__name__icontains=delivery) |
                 Q(store=store,customer__name__icontains=query, payment_status=status,
                   date__icontains=date,  delivery_company__isnull=True)
-
             ).order_by(order_by)
         return queryset
 
@@ -99,8 +98,8 @@ class SingleSale(APIView):
         data = request.data['data']
         store=request.user.store
         new_sale = Sale(store=store)
-        
-        if 'customer_name' in data and data['customer_name'] != '':
+
+        if 'customer_name' in data and data['customer_name']  is not None:
             customer,is_new_customer= Customer.objects.get_or_create(
                 name=data['customer_name'],store=store)
             if is_new_customer:
@@ -114,7 +113,7 @@ class SingleSale(APIView):
                 customer.save()
             new_sale.customer = customer
 
-        if 'delivery_company_name' in data and data['delivery_company_name'] != '':
+        if 'delivery_company_name' in data and data['delivery_company_name']  is not None:
             delivery= Delivery.objects.get_or_create(
                 name=data['delivery_company_name'],store=store)[0]
             new_sale.delivery_company = delivery
@@ -152,8 +151,8 @@ class SingleSale(APIView):
         store=request.user.store
         old_sale = get_object_or_404(
             Sale, id=data['id'],store=store)
-      
-        if 'customer_name' in data and data['customer_name'] != '':
+
+        if 'customer_name' in data and data['customer_name']  is not None:
             customer,is_new_customer = Customer.objects.get_or_create(
                 name=data['customer_name'],store=store)
             if is_new_customer:
@@ -166,30 +165,32 @@ class SingleSale(APIView):
                         customer_address_serializer.save()
                 customer.save()
             old_sale.customer = customer
-        if 'delivery_company_name' in data and data['delivery_company_name'] != '':
+        if 'delivery_company_name' in data and data['delivery_company_name']  is not None :
             delivery= Delivery.objects.get_or_create(
                 name=data['delivery_company_name'],store=store)[0]
             old_sale.delivery_company = delivery
-          
+
 
         sale_serializer = SaleSerializers(old_sale, data=data)
         if sale_serializer.is_valid():
             sale_serializer.save()
-            if data['products']:
-                for sale_product in data['products']:
+
+            SaleProduct.objects.filter(sale=old_sale).delete()
+            for sale_product in data['products']:
                     if 'id' in sale_product:
-                        sale_product_model = get_object_or_404(
-                            SaleProduct, id=sale_product['id'])
-                    else:
-                        sale_product_model = SaleProduct.objects.create(
+                        # sale_product_model = get_object_or_404(
+                        #     SaleProduct, id=sale_product['id'])
+                        del sale_product['id']
+
+                    sale_product_model = SaleProduct.objects.create(
                             name=sale_product['name'], sale=old_sale,store=store
                         )
                     sale_product_serializer = SaleProductSerializers(
                         sale_product_model, data=sale_product)
-                   
+
                     if sale_product_serializer.is_valid():
                         sale_product_serializer.save()
-                       
+
                     else:
                         return Response(sale_product_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
             if data['address']:
@@ -197,7 +198,7 @@ class SingleSale(APIView):
                 sale=old_sale)[0]
                     sale_address_serializer = SaleAddressSerializers(
                         sale_address_model, data=data['address'])
-                    
+
                     if sale_address_serializer.is_valid():
                         sale_address_serializer.save()
                     else:
@@ -212,6 +213,18 @@ class SingleSale(APIView):
         sale = get_object_or_404(
             Sale, id=id,store=store)
         sale_serializer = SaleSerializers(sale, many=False)
+        return Response(sale_serializer.data, status=status.HTTP_200_OK)
+
+
+class SaleView(generics.ListAPIView):
+    
+    def get(self, request, *args, **kwargs):
+        oid = request.GET['oid']
+        sid = request.GET['sid']
+        date = request.GET['date']
+        sale_ = generics.get_object_or_404(
+            Sale, id=oid,store__pk=sid,date=date)
+        sale_serializer = SaleSerializers(sale_, many=False)
         return Response(sale_serializer.data, status=status.HTTP_200_OK)
 
 
@@ -253,15 +266,21 @@ class SaleReport(generics.ListAPIView):
 
     def get(self, request, *args, **kwargs):
         store=request.user.store
-        today_date = request.GET['today']
+        today = date.today()
         from_date = request.GET['from']
         to_date = request.GET['to']
 
-        today_sale_number = list(Sale.objects.filter(created_at__icontains=today_date,store=store).annotate(dates=TruncDate(
+        today_sale_number = list(Sale.objects.filter(created_at__year=today.year,
+                                       created_at__month=today.month,
+                                       created_at__day=today.day,store=store).annotate(dates=TruncDate(
             'created_at')).values('dates').annotate(count=Count('id')).values('dates', 'count').order_by('dates'))
-        today_sale_prices = list(SaleProduct.objects.filter(store=store,created_at__icontains=today_date).annotate(dates=TruncDate(
+        today_sale_prices = list(SaleProduct.objects.filter(store=store,created_at__year=today.year,
+                                       created_at__month=today.month,
+                                       created_at__day=today.day).annotate(dates=TruncDate(
             'created_at')).values('dates').annotate(price=Sum('subtotal')).values('dates', 'price').order_by('dates'))
-        today_received_amounts = list(SalePayment.objects.filter(store=store,created_at__icontains=today_date).annotate(dates=TruncDate(
+        today_received_amounts = list(SalePayment.objects.filter(store=store,created_at__year=today.year,
+                                       created_at__month=today.month,
+                                       created_at__day=today.day).annotate(dates=TruncDate(
             'created_at')).values('dates').annotate(price=Sum('amount')).values('dates', 'price').order_by('dates'))
 
         sale_number = list(Sale.objects.filter(store=store,created_at__range=([from_date, to_date])).annotate(dates=TruncDate(

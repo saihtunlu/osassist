@@ -12,5 +12,6 @@ urlpatterns = [
     path('invoice/', views.Invoices.as_view()),
     path('sales-status/', views.SalesStatus.as_view()),
     path('order-products/', views.GetOrderProducts.as_view()),
+    path('sale-view/', views.SaleView.as_view()),
 
 ]
