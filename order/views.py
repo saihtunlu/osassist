@@ -1,5 +1,6 @@
 from django.shortcuts import get_object_or_404
 from app.pagination import Pagination
+from supplier.models import Supplier
 from .models import Order
 from .serializers import OrderSerializers
 from rest_framework import status
@@ -14,6 +15,10 @@ class OrderView(generics.ListAPIView):
         data = request.data['data']
         store=request.user.store
         new_order = Order(store=store)
+        if 'cargo_name' in data and data['cargo_name']  is not None:
+                cargo= Supplier.objects.get_or_create(
+                name=data['cargo_name'],store=store)[0]
+                new_order.cargo = cargo
         order_serializer = OrderSerializers(new_order, data=data)
         if order_serializer.is_valid():
             order_serializer.save()
@@ -34,7 +39,10 @@ class OrderView(generics.ListAPIView):
         store=request.user.store
         old_order = get_object_or_404(
             Order, id=data['id'],store=store)
-
+        if 'cargo_name' in data and data['cargo_name']  is not None:
+                cargo= Supplier.objects.get_or_create(
+                name=data['cargo_name'],store=store)[0]
+                old_order.cargo = cargo
         order_serializer = OrderSerializers(old_order, data=data)
         if order_serializer.is_valid():
             order_serializer.save()

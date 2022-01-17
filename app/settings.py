@@ -74,7 +74,8 @@ CORS_ORIGIN_WHITELIST = [
     "http://localhost:4000",
     "http://127.0.0.1:4000",
 "http://192.168.100.7:8080",
-"https://osassist-order.netlify.app",
+"https://osassist-orders.netlify.app",
+'https://osassist.netlify.app',
 "app://."
 
 ]
@@ -87,7 +88,8 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:4000",
     "http://127.0.0.1:4000",
 "http://192.168.100.7:8080",
-"https://osassist-order.netlify.app",
+"https://osassist-orders.netlify.app",
+'https://osassist.netlify.app',
 "app://."
 ]
 
@@ -95,7 +97,8 @@ CSRF_TRUSTED_ORIGINS = [
     "localhost",
     "127.0.0.1",
 "192.168.100.7",
-"osassist-order.netlify.app",
+"osassist-orders.netlify.app",
+'osassist.netlify.app'
 ]
 CORS_ALLOW_HEADERS = list(default_headers) + [
     'contenttype',
